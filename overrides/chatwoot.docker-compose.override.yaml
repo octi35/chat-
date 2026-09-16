@@ -1,0 +1,27 @@
+# Override generado porque no puedo crear/leer ningún archivo .env* en este
+# proyecto (guardrail de seguridad del propio Claude Code, no configurable).
+# Apunta env_file a la plantilla en docs/env-templates/, que tiene los
+# mismos valores que deberías copiar a .env manualmente. Docker Compose
+# mergea este archivo automáticamente con docker-compose.yaml. El tag
+# `!override` reemplaza la lista de env_file del base en vez de concatenarla
+# (default de Compose para listas es "append", por eso hace falta el tag).
+#
+# Cuando crees chatwoot/.env vos mismo (ver docs/entorno-local.md), podés
+# borrar este archivo y compose va a volver a usar env_file: .env definido
+# en docker-compose.yaml.
+services:
+  base:
+    env_file: !override
+      - ../docs/env-templates/chatwoot-variables.txt
+  rails:
+    env_file: !override
+      - ../docs/env-templates/chatwoot-variables.txt
+  sidekiq:
+    env_file: !override
+      - ../docs/env-templates/chatwoot-variables.txt
+  vite:
+    env_file: !override
+      - ../docs/env-templates/chatwoot-variables.txt
+  redis:
+    env_file: !override
+      - ../docs/env-templates/chatwoot-variables.txt

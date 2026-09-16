@@ -1,0 +1,14 @@
+# Los productos en sí no se vendorean acá — setup.sh los clona frescos de
+# GitHub (chatwoot/chatwoot y ChatbotXIO/ChatbotX). Este repo es solo la
+# capa de orquestación: docs, plantillas de env y overrides de Docker Compose.
+/chatwoot/
+/chatbotx/
+
+# Nunca secretos reales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+.DS_Store

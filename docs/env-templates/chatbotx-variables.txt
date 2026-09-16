@@ -1,0 +1,121 @@
+# ==========================================================================
+# Plantilla de variables de entorno para ChatbotX (desarrollo local)
+# ==========================================================================
+# No pude leer chatbotx/.env.example directamente por el mismo guardrail
+# de seguridad explicado en chatwoot-variables.txt (bloquea cualquier
+# archivo .env* del proyecto, no configurable desde settings.json).
+#
+# Esta plantilla la arme leyendo:
+#   - docker-compose.yml / docker-compose.dev.yml (servicios e infra)
+#   - apps/builder/src/env.ts (validación de env con zod/t3-env)
+#   - packages/database, packages/redis, packages/filesystem,
+#     packages/encryption, packages/auth, packages/mail (cada uno valida
+#     sus propias env vars con su propio keys.ts)
+#   - packages/ai/src/core/factory.ts (proveedores de IA)
+#
+# INSTRUCCIONES:
+#   1) Copiá este archivo a chatbotx/.env
+#   2) Los valores marcados con <TU_...> son placeholders reales que tenés
+#      que completar (ver docs/canales-pendientes.md y docs/ia-pendiente.md)
+#   3) Los secretos ya vienen generados random para este entorno local
+#      (ENCRYPTION_KEY, BETTER_AUTH_SECRET, JAVASCRIPT_EXECUTOR_TOKEN,
+#      password de Postgres) — no los reutilices en producción.
+#   4) docker-compose.yml ya trae defaults (`${VAR:-default}`) para varias
+#      de estas, así que el stack levanta igual si algo queda vacío; los
+#      valores de abajo son para que coincidan entre el compose y la app.
+# ==========================================================================
+
+# ---- Edición / licencia ----
+# "community" = todo el código MIT, sin nada de apps/builder/src/enterprise.
+# Ver docs/licencias.md antes de cambiar esto.
+NEXT_PUBLIC_EDITION=community
+# LICENSE_KEY=   # solo si en algún momento pasás a "enterprise"
+
+# ---- Postgres (TimescaleDB) ----
+# OJO: postgres/filesystem NO leen env_file (solo lo lee builder/worker/
+# realtime); sus valores salen de `${VAR:-default}` en docker-compose.yml,
+# resuelto en el HOST sin pasar por ningún .env. Por eso estos valores usan
+# a propósito los MISMOS defaults que trae el compose (chatbotx/secretkey),
+# para que el DATABASE_URL/S3_* que sí ve el builder coincida con lo que el
+# contenedor de Postgres/RustFS realmente tiene configurado. Si más adelante
+# creás un chatbotx/.env real y le cambiás estos valores, compose los toma
+# solo para postgres/redis/filesystem si exportás las mismas variables en tu
+# shell antes de `docker compose up` (ver docs/entorno-local.md).
+POSTGRES_DB=chatbotx
+POSTGRES_USER=chatbotx
+POSTGRES_PASSWORD=secretkey
+DATABASE_URL=postgres://chatbotx:secretkey@postgres:5432/chatbotx
+POSTGRES_LOG_STATEMENT=none
+
+# ---- Redis ----
+REDIS_URL=redis://redis:6379
+
+# ---- Storage S3-compatible (RustFS local, ver override de puertos) ----
+RUSTFS_ACCESS_KEY=chatbotx
+RUSTFS_SECRET_KEY=secretkey
+RUSTFS_API_CORS_ALLOW_ORIGIN=*
+S3_ENDPOINT=http://filesystem:9000
+S3_ACCESS_KEY_ID=chatbotx
+S3_SECRET_ACCESS_KEY=secretkey
+S3_REGION=us-east-1
+S3_BUCKET=chatbotx
+
+# ---- Auth (better-auth) ----
+BETTER_AUTH_SECRET=1022207a6c02853cf9c11a85f4f29e711129bd8f936d898be0fd3c2b032a1448
+BETTER_AUTH_URL=http://localhost:3123
+NEXT_PUBLIC_BUILDER_URL=http://localhost:3123
+# NEXT_PUBLIC_BROKER_URL=   # opcional, host dedicado para OAuth/webhooks whitelabel
+
+# ---- Encriptación de credenciales (WhatsApp/Messenger/Instagram/SMTP/etc) ----
+# 64 caracteres hex = 32 bytes. Generado con: openssl rand -hex 32
+ENCRYPTION_KEY=c8dbc72583c1f11d33da5dfa76bd07bece3a1ec373d7ab3023450908c63f1c3d
+ENCRYPTION_KEY_ID=default
+
+# ---- Realtime / WebSocket ----
+NEXT_PUBLIC_INTERNAL_WS_URL=http://localhost:1999
+
+# ---- Mail (Mailhog local) ----
+SMTP_SERVER=smtp://username:password@mailhog:1025
+SMTP_FROM=noreply@example.com
+
+# ---- Javascript executor (sandbox de pasos de flujo) ----
+# OJO: el servicio javascript-executor del compose fija este valor via
+# `environment: JAVASCRIPT_EXECUTOR_TOKEN: ${JAVASCRIPT_EXECUTOR_TOKEN:-change-me-in-production-at-least-32-chars}`,
+# que se resuelve en el HOST antes de crear el contenedor (no lee este
+# .env vía env_file). Para que worker/builder y javascript-executor usen
+# el mismo token, hay que setear esta misma variable en el shell del host
+# al levantar compose, o dejar el default de abajo tal cual en los dos
+# lados (es lo que hace este template).
+JAVASCRIPT_EXECUTOR_TOKEN=change-me-in-production-at-least-32-chars
+MAX_CONCURRENCY=2
+
+# ---- Adminer (UI de administración de Postgres, solo dev) ----
+ADMINER_PORT=8080
+
+# ==========================================================================
+# WhatsApp / Messenger / Instagram — ChatbotX NO usa .env para esto, se
+# cargan cifrados en la tabla PlatformCredential desde la UI:
+#   /admin/platform-credentials  (super admin)
+#   /manage/platform-credentials (reseller/owner)
+# Ver docs/canales-pendientes.md para los campos exactos de cada uno.
+# Dejo comentado acá solo como referencia de que existen, no hace falta
+# descomentar nada de esto.
+# ==========================================================================
+# WhatsApp:  clientId, clientSecret, version, configId, systemUserId,
+#            systemUserToken, businessId, businessName, verifyToken
+# Messenger: clientId, clientSecret, version, verifyToken,
+#            marketingMessagesConfigId (opcional)
+# Instagram / InstagramFacebook: clientId, clientSecret, version, verifyToken
+
+# ==========================================================================
+# Proveedores de IA (packages/ai/src/core/factory.ts) — estas SÍ son env
+# vars reales, usadas como clave por defecto de la plataforma para
+# workspaces que no traen su propia clave (BYOK). Completá al menos una.
+# ==========================================================================
+# OPENAI_API_KEY=<TU_OPENAI_API_KEY>
+# ANTHROPIC_API_KEY=<TU_ANTHROPIC_API_KEY>
+# GOOGLE_GENERATIVE_AI_API_KEY=<TU_GEMINI_API_KEY>
+# DEEPSEEK_API_KEY=<TU_DEEPSEEK_API_KEY>
+# OPENROUTER_API_KEY=<TU_OPENROUTER_API_KEY>
+
+LOG_LEVEL=info

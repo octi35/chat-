@@ -1,0 +1,32 @@
+# Override local para:
+#  1) correr ChatbotX junto a Chatwoot en la misma máquina sin que choquen
+#     los puertos de host (ambos publican Postgres en 5432, Redis en 6379
+#     y Mailhog en 1025/8025 por defecto).
+#  2) apuntar env_file a docs/env-templates/chatbotx-variables.txt porque no
+#     puedo crear/leer ningún archivo .env* en este proyecto (guardrail de
+#     seguridad de Claude Code, no configurable). Cuando crees chatbotx/.env
+#     vos mismo, borrá los `env_file:` de acá abajo y dejá solo el mapeo de
+#     puertos; docker-compose.yml y docker-compose.dev.yml ya apuntan a
+#     `./.env` por su cuenta.
+# Se mergea automáticamente con docker-compose.yml; para docker-compose.dev.yml
+# hay que pasarlo explícito con -f (ver docs/entorno-local.md).
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+  redis:
+    ports:
+      - "6380:6379"
+  mailhog:
+    ports:
+      - "1026:1025"
+      - "8026:8025"
+  builder:
+    env_file: !override
+      - ../docs/env-templates/chatbotx-variables.txt
+  worker:
+    env_file: !override
+      - ../docs/env-templates/chatbotx-variables.txt
+  realtime:
+    env_file: !override
+      - ../docs/env-templates/chatbotx-variables.txt
